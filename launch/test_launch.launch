@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="toi_bot_stt" type="speech_to_text.py" name="toi_bot_stt_node" output="screen"/>
+	<node pkg="toi_bot_stt" type="wake_word_node.py" name="wake_word_node" />
+</launch>
