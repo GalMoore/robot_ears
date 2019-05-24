@@ -25,6 +25,8 @@ volumes=[]
 myHome = os.path.expanduser('~')
 message = speechTT()
 pub =rospy.Publisher('/stt_topic', speechTT, queue_size=1)
+pub_listening =rospy.Publisher('/is_robot_listening', String, queue_size=1)
+
 FORMAT=pyaudio.paInt16
 CHANNELS=1
 RATE=16000 # takes a few hundread samples per second 
@@ -74,7 +76,7 @@ def set_threshold_for_speech_rec(current_vol_avg):
     global minimum_tresh_to_trigger_ears
 
     if 0<current_vol_avg<1000:
-        minimum_tresh_to_trigger_ears = 2000
+        minimum_tresh_to_trigger_ears = 3000
     elif 1000< current_vol_avg<2000:
         minimum_tresh_to_trigger_ears = 4000
     elif 2000<current_vol_avg<4000:
@@ -285,7 +287,9 @@ if __name__ == '__main__':
             pass
 
         else:
+            pub_listening.publish("listening")
             detect_and_record()
+            pub_listening.publish("not listening")
             normalize(FILE_NAME,-8)
             # start = time.time()
             tell_user_acknowledged() # runs script to move robot eyes - so we know it heard something
