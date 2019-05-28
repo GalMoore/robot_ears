@@ -41,7 +41,6 @@ i = 0
 tic = time.time()
 boolSpeak = False
 input_num_for_mic_device = None
-ignore_noise_above_thresh = 12000
 
 
 
@@ -86,54 +85,59 @@ def set_threshold_for_speech_rec(current_vol_avg):
         minimum_tresh_to_trigger_ears = 10000
 
 
-# def get_avg_ambient_noise(length_of_Ambient_recording):
-#     global stream
-#     global audio 
-#     global input_num_for_mic_device
-#     global volumes
 
-#     n = 0
-#     audio=pyaudio.PyAudio() #instantiate the pyaudio
 
-#     # # GET THE RIGHT MICROPHONE INPUT (IF NOT PLUGGED IN WILL BE DEFAULT)
-#     # info = audio.get_host_api_info_by_index(0)
-#     # numdevices = info.get('deviceCount')
-#     # for z in range(0, numdevices):
-#     #     if (audio.get_device_info_by_host_api_device_index(0, z).get('maxInputChannels')) > 0:
-#     #         # print names of found input mic devices
-#     #         print(audio.get_device_info_by_host_api_device_index(0, z).get('name'))
-#     #         # if sysdefault found (webcam) set its number as input mic - otherwise remains None
-#     #         if(audio.get_device_info_by_host_api_device_index(0, z).get('name')=="sysdefault" or audio.get_device_info_by_host_api_device_index(0, z).get('name')=="HP Webcam HD 2300: USB Audio (hw:1,0)"):
-#     #             print("sysdefault OR HD WECAM found on number / setting mic input as: " + str(z))
-#     #             input_num_for_mic_device = z
 
-#     stream=audio.open(format=FORMAT,channels=CHANNELS,  #recording prerequisites
-#                   rate=RATE,
-#                   input=True,
-#                   frames_per_buffer=CHUNK)
-#                   # input_device_index=input_num_for_mic_device)
+def get_avg_ambient_noise(length_of_Ambient_recording):
+    global stream
+    global audio 
+    global input_num_for_mic_device
+    global volumes
 
-#     while(True):
-#         # record for x seconds
-#         data=stream.read(CHUNK)
-#         data_chunk=array('h',data) #data_chunk is an array of 2048 numbers
-#         vol=max(data_chunk)
-#         # print(vol)
-#         frames.append(data)
-#         volumes.append(vol)
-#         if(n==length_of_Ambient_recording):
-#             # check_avg_vol_in_frames(frames)
-#             print(volumes)
-#             sum_volumes = sum(volumes)
-#             print("sum: " + str(sum_volumes))
-#             avg_volume = sum_volumes/len(volumes)
-#             print("avg vol: " + str(avg_volume))
-#             n = 0 
-#             # set average volume as average volume (threshold should be 70% louder ??)
-#             return avg_volume
+    n = 0
+    audio=pyaudio.PyAudio() #instantiate the pyaudio
 
-#         n=n+1
-#         print("calibrating mic: " + str(n) + "/50")
+    # # GET THE RIGHT MICROPHONE INPUT (IF NOT PLUGGED IN WILL BE DEFAULT)
+    # info = audio.get_host_api_info_by_index(0)
+    # numdevices = info.get('deviceCount')
+    # for z in range(0, numdevices):
+    #     if (audio.get_device_info_by_host_api_device_index(0, z).get('maxInputChannels')) > 0:
+    #         # print names of found input mic devices
+    #         print(audio.get_device_info_by_host_api_device_index(0, z).get('name'))
+    #         # if sysdefault found (webcam) set its number as input mic - otherwise remains None
+    #         if(audio.get_device_info_by_host_api_device_index(0, z).get('name')=="sysdefault" or audio.get_device_info_by_host_api_device_index(0, z).get('name')=="HP Webcam HD 2300: USB Audio (hw:1,0)"):
+    #             print("sysdefault OR HD WECAM found on number / setting mic input as: " + str(z))
+    #             input_num_for_mic_device = z
+
+    stream=audio.open(format=FORMAT,channels=CHANNELS,  #recording prerequisites
+                  rate=RATE,
+                  input=True,
+                  frames_per_buffer=CHUNK)
+                  # input_device_index=input_num_for_mic_device)
+
+    while(True):
+        # record for x seconds
+        data=stream.read(CHUNK)
+        data_chunk=array('h',data) #data_chunk is an array of 2048 numbers
+        vol=max(data_chunk)
+        # print(vol)
+        frames.append(data)
+        volumes.append(vol)
+        if(n==length_of_Ambient_recording):
+            # check_avg_vol_in_frames(frames)
+            print(volumes)
+            sum_volumes = sum(volumes)
+            print("sum: " + str(sum_volumes))
+            avg_volume = sum_volumes/len(volumes)
+            print("avg vol: " + str(avg_volume))
+            n = 0 
+            # set average volume as average volume (threshold should be 70% louder ??)
+            return avg_volume
+
+        n=n+1
+        print("calibrating mic: " + str(n) + "/50")
+
+
 
 
 def detect_and_record():
@@ -145,7 +149,6 @@ def detect_and_record():
     global stream
     global audio 
     global input_num_for_mic_device
-    global ignore_noise_above_thresh
 
     has_reached_first_threshold = False
     i = 0
@@ -165,23 +168,16 @@ def detect_and_record():
         data=stream.read(CHUNK)
         data_chunk=array('h',data) #data_chunk is an array of 2048 numbers
         vol=max(data_chunk)
-        # if not yet told arduino to turn on, turn on now
-        pub_listening.publish("listening")
-        pub_listening.publish("not listening")
-
-
         print("frames recorded: " + str(len(frames)) + " current volume:  "+  str(vol) + " thresh: " + str(minimum_tresh_to_trigger_ears))
 
 
         # Has not reached first threshold yet
         if(vol<minimum_tresh_to_trigger_ears and has_reached_first_threshold==False):
             # print("not recording yet - less than vol minimum_tresh_to_trigger_ears!")
-            if(i>80):
-                return False
             pass
         
         # reached threshold for the first time
-        if(ignore_noise_above_thresh>vol>minimum_tresh_to_trigger_ears and has_reached_first_threshold==False):
+        if(vol>minimum_tresh_to_trigger_ears and has_reached_first_threshold==False):
             print("past threshold once - started recording")
             has_reached_first_threshold = True
             frames.append(data) 
@@ -193,7 +189,7 @@ def detect_and_record():
             if(i==20):
                 # and then finishes recording
                 record_sentence_to_wav()
-                return True
+                return
 
         if(vol>minimum_tresh_to_trigger_ears and has_reached_first_threshold==True):
             frames.append(data) 
@@ -279,17 +275,9 @@ if __name__ == '__main__':
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
 
-    # NO AMBIENCE CALIBRATION
-    # GETS THIS IS DATA FROM STATE
-    avg_vol_of_ambience = 100
-    #  LATER ADD THAT THIS IS INPUT FROM STATE
-    # avg_vol_of_ambience = sys.argv[1]
-
+    # record 5 seconds of ambient noise and set treshold for speech recognition
+    avg_vol_of_ambience = get_avg_ambient_noise(50)
     set_threshold_for_speech_rec(avg_vol_of_ambience)
-    # message.query = "init"
-    # message.intent = "init"
-    # message.response = "init"
-    # pub.publish(message)
 
     # while(True):
 
@@ -299,16 +287,13 @@ if __name__ == '__main__':
         pass
 
     else:
-        # pub_listening.publish("listening")
-        hello = detect_and_record()
-        print("print of detect and record: " + str(hello))
-        if hello==True:
-            # pub_listening.publish("not listening")
-            normalize(FILE_NAME,-8)
-            # start = time.time()
-            tell_user_acknowledged() # runs script to move robot eyes - so we know it heard something
-            send_Wav_to_google_get_response_txt_file_and_publish()
-        # time.sleep(1)
+        pub_listening.publish("listening")
+        detect_and_record()
+        pub_listening.publish("not listening")
+        normalize(FILE_NAME,-8)
+        # start = time.time()
+        tell_user_acknowledged() # runs script to move robot eyes - so we know it heard something
+        send_Wav_to_google_get_response_txt_file_and_publish()
         # time.sleep()
         # end = time.time()
         # print("took this long to get response from google and publish to topic:")
