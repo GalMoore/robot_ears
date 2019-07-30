@@ -9,7 +9,6 @@ from array import array
 from struct import pack
 import pyaudio
 import wave
-import time
 from std_msgs.msg import String
 # from toi_bot_stt.msg import speechTT
 from robot_ears.msg import speechTT
@@ -20,8 +19,6 @@ from array import array
 import time
 from pydub import AudioSegment
 volumes=[]
-
-
 myHome = os.path.expanduser('~')
 message = speechTT()
 pub =rospy.Publisher('/stt_topic', speechTT, queue_size=1)
@@ -30,8 +27,11 @@ pub_listening =rospy.Publisher('/is_robot_listening', String, queue_size=1)
 FORMAT=pyaudio.paInt16
 CHANNELS=1
 RATE=16000 # takes a few hundread samples per second 
-CHUNK=1024
-minimum_tresh_to_trigger_ears=6000 # MAKE ASURE INPUT IS THE WEBACAM AND SET TO FULL
+# CHUNK=1024
+CHUNK=516 # CHUNK DETERMINES HOW MANY SAMPLES IN EACH FRAME. SO SMALL CHUNK SPEEDS UP I
+ACCEPTED_QUITE_FRAMES=30
+TIMEOUT=150 # 150 frames (i)
+minimum_tresh_to_trigger_ears=6000 # MAKE SURE INPUT IS THE WEBACAM AND SET TO FULL
 FILE_NAME= myHome + '/catkin_ws/src/robot_ears/speech_wavs/filename.wav'
 NORMALIZED_FILE_NAME = myHome + '/catkin_ws/src/robot_ears/speech_wavs/normalized.wav'
 audio=pyaudio.PyAudio() #instantiate the pyaudio
@@ -42,8 +42,6 @@ tic = time.time()
 boolSpeak = False
 input_num_for_mic_device = None
 ignore_noise_above_thresh = 12000
-
-
 
 
 def google():
@@ -135,10 +133,19 @@ def set_threshold_for_speech_rec(current_vol_avg):
 #         n=n+1
 #         print("calibrating mic: " + str(n) + "/50")
 
+# WE PLUG RESPEAKER INTO USB AND SELECT IT AS INPUT IN GUI WITH MAX VOLUME
+def get_index_of_default():
+    p = pyaudio.PyAudio()
+    info = p.get_host_api_info_by_index(0)
+    numdevices = info.get('deviceCount')
+    for i in range(0, numdevices):
+            if (p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
+                print "Input Device id ", i, " - ", p.get_device_info_by_host_api_device_index(0, i).get('name')
+            if(p.get_device_info_by_host_api_device_index(0, i).get('name')=="default"):
+                return(i)
 
 def detect_and_record():
 
-    # WHEN ENTER FUNCTION RESTART ALL VARS 
     global has_reached_first_threshold
     global i 
     global minimum_tresh_to_trigger_ears
@@ -146,55 +153,58 @@ def detect_and_record():
     global audio 
     global input_num_for_mic_device
     global ignore_noise_above_thresh
-
     has_reached_first_threshold = False
     i = 0
     tic = time.time()
-
     audio=pyaudio.PyAudio() #instantiate the pyaudio
 
+
+
+    DEVICE_ID = get_index_of_default()
     stream=audio.open(format=FORMAT,channels=CHANNELS,  #recording prerequisites
                   rate=RATE,
                   input=True,
-                  frames_per_buffer=CHUNK)
+                  frames_per_buffer=CHUNK,
+                  input_device_index=DEVICE_ID)
 
-    # AND DELETE PREVIOUS WAV FROM ARRAY OF SOUND DATA
+    # DELETE PREVIOUS WAV FROM ARRAY OF SOUND DATA
     del frames[:]
 
+    # START RECORDING LOGIC HERE
     while(True):
-        data=stream.read(CHUNK)
+        data=stream.read(CHUNK) # each chunk is 1024 bits of data
         data_chunk=array('h',data) #data_chunk is an array of 2048 numbers
         vol=max(data_chunk)
         # if not yet told arduino to turn on, turn on now
         pub_listening.publish("listening")
         pub_listening.publish("not listening")
 
-
         print("frames recorded: " + str(len(frames)) + " current volume:  "+  str(vol) + " thresh: " + str(minimum_tresh_to_trigger_ears))
-
 
         # Has not reached first threshold yet
         if(vol<minimum_tresh_to_trigger_ears and has_reached_first_threshold==False):
             # print("not recording yet - less than vol minimum_tresh_to_trigger_ears!")
-            if(i>80):
+            if(i>TIMEOUT):
+                print("waited till i==" + str(TIMEOUT) + " and thresh not passed - so quitting")
                 return False
             pass
         
         # reached threshold for the first time
         if(ignore_noise_above_thresh>vol>minimum_tresh_to_trigger_ears and has_reached_first_threshold==False):
-            print("past threshold once - started recording")
+            print("<<<past threshold once - started recording>>>")
             has_reached_first_threshold = True
             frames.append(data) 
 
-        # input sound does not reach thresh but first tresh reached
+        # input sound does not reach thresh but first thresh alreadyreached
         if(vol<minimum_tresh_to_trigger_ears and has_reached_first_threshold==True):
-            # allows some extra time so not to cut you off mid sentence
+            # allows some extra frames below thresh in case sentence not finished yet  
             frames.append(data) 
-            if(i==20):
+            if(i==ACCEPTED_QUITE_FRAMES):
                 # and then finishes recording
                 record_sentence_to_wav()
                 return True
 
+        # Threshold is being reached continously and first thresh reached - keep recording
         if(vol>minimum_tresh_to_trigger_ears and has_reached_first_threshold==True):
             frames.append(data) 
             # reset counter
@@ -280,8 +290,7 @@ if __name__ == '__main__':
 
 
     # NO AMBIENCE CALIBRATION
-    # GETS THIS IS DATA FROM STATE
-    avg_vol_of_ambience = 100
+    avg_vol_of_ambience = 100 # will set to 3000 thresh - which is pretty low band
     #  LATER ADD THAT THIS IS INPUT FROM STATE
     # avg_vol_of_ambience = sys.argv[1]
 
@@ -294,13 +303,13 @@ if __name__ == '__main__':
     # while(True):
 
     if(boolSpeak == True):
-        print("I AM SORRY I CAN NOT LISTN NOW")
+        print("I AM SORRY I CAN NOT LISTEN NOW")
         time.sleep(2)
         pass
 
     else:
         # pub_listening.publish("listening")
-        hello = detect_and_record()
+        hello = detect_and_record() # returns data which is 
         print("print of detect and record: " + str(hello))
         if hello==True:
             # pub_listening.publish("not listening")
