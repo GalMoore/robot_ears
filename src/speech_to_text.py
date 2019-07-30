@@ -133,6 +133,7 @@ def set_threshold_for_speech_rec(current_vol_avg):
 #         n=n+1
 #         print("calibrating mic: " + str(n) + "/50")
 
+
 # WE PLUG RESPEAKER INTO USB AND SELECT IT AS INPUT IN GUI WITH MAX VOLUME
 def get_index_of_default():
     p = pyaudio.PyAudio()
@@ -183,6 +184,9 @@ def detect_and_record():
 
         # Has not reached first threshold yet
         if(vol<minimum_tresh_to_trigger_ears and has_reached_first_threshold==False):
+            # record anyway and chop everything up until last 20 frames when thresh found.
+            frames.append(data)
+
             # print("not recording yet - less than vol minimum_tresh_to_trigger_ears!")
             if(i>TIMEOUT):
                 print("waited till i==" + str(TIMEOUT) + " and thresh not passed - so quitting")
@@ -193,6 +197,8 @@ def detect_and_record():
         if(ignore_noise_above_thresh>vol>minimum_tresh_to_trigger_ears and has_reached_first_threshold==False):
             print("<<<past threshold once - started recording>>>")
             has_reached_first_threshold = True
+            # delete everything up to 10 frames before beginning
+            del frames[:len(frames)-20]
             frames.append(data) 
 
         # input sound does not reach thresh but first thresh alreadyreached
@@ -309,7 +315,7 @@ if __name__ == '__main__':
 
     else:
         # pub_listening.publish("listening")
-        hello = detect_and_record() # returns data which is 
+        hello = detect_and_record() # returns True or False 
         print("print of detect and record: " + str(hello))
         if hello==True:
             # pub_listening.publish("not listening")
