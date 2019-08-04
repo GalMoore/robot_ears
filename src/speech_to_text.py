@@ -178,7 +178,7 @@ def detect_and_record():
         vol=max(data_chunk)
         # if not yet told arduino to turn on, turn on now
         pub_listening.publish("listening")
-        pub_listening.publish("not listening")
+        # pub_listening.publish("not listening")
 
         print("frames recorded: " + str(len(frames)) + " current volume:  "+  str(vol) + " thresh: " + str(minimum_tresh_to_trigger_ears))
 
@@ -190,6 +190,7 @@ def detect_and_record():
             # print("not recording yet - less than vol minimum_tresh_to_trigger_ears!")
             if(i>TIMEOUT):
                 print("waited till i==" + str(TIMEOUT) + " and thresh not passed - so quitting")
+                pub_listening.publish("not listening")
                 return False
             pass
         
@@ -208,6 +209,7 @@ def detect_and_record():
             if(i==ACCEPTED_QUITE_FRAMES):
                 # and then finishes recording
                 record_sentence_to_wav()
+
                 return True
 
         # Threshold is being reached continously and first thresh reached - keep recording
@@ -323,6 +325,8 @@ if __name__ == '__main__':
             # start = time.time()
             tell_user_acknowledged() # runs script to move robot eyes - so we know it heard something
             send_Wav_to_google_get_response_txt_file_and_publish()
+            pub_listening.publish("not listening")
+
         # time.sleep(1)
         # time.sleep()
         # end = time.time()
