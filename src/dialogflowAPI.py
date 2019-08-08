@@ -1,4 +1,4 @@
-#!/home/gal/ToiBotEnv/bin/python
+#!/home/intel/ToiBotEnv/bin/python
 from sys import byteorder
 from array import array
 from struct import pack
@@ -10,7 +10,12 @@ import time
 import sys
 # import rospy
 import os
-myHome = os.path.expanduser('~')
+# myHome = os.path.expanduser('~')
+
+
+from os.path import expanduser
+home = expanduser("~") + "/"
+# os.system("python3 {}catkin_ws/src/robot_face/src/headturn.py {}".format(home,str(5)))
 
 ''' PYTHON 3 CODE THAT CONVERTS WAV 
 TO STRING AND QUERIES DIALOGFLOW FOR INTENT & RESULT which are printed into txt files'''
@@ -19,7 +24,7 @@ def detect_intent_audio():
     """Returns the result of detect intent with an audio file as input.
     Using the same `session_id` between requests allows continuation
     of the conversation."""
-    audio_file_path = myHome+"/catkin_ws/src/robot_ears/speech_wavs/normalized.wav"
+    audio_file_path = home+"/catkin_ws/src/robot_ears/speech_wavs/normalized.wav"
     session_client = dialogflow.SessionsClient()
 
     # Note: hard coding audio_encoding and sample_rate_hertz for simplicity.
@@ -46,7 +51,7 @@ def detect_intent_audio():
     # print('Query text: {}'.format(response.query_result.query_text))
 
     # save string query text to query.txt in /home/gal/toibot_ws/src/ToiBot1/src/toi_bot_stt/text_files
-    write_to_file(myHome+"/catkin_ws/src/robot_ears/text_files/query.txt", response.query_result.query_text)
+    write_to_file(home+"/catkin_ws/src/robot_ears/text_files/query.txt", response.query_result.query_text)
     print("query: " + response.query_result.query_text)
     
     # print('Detected intent: {} (confidence: {})\n'.format(
@@ -54,12 +59,12 @@ def detect_intent_audio():
     #     response.query_result.intent_detection_confidence))
 
     # save string intent to intent.txt in /home/gal/toibot_ws/src/ToiBot1/src/toi_bot_stt/text_files
-    write_to_file(myHome+"/catkin_ws/src/robot_ears/text_files/intent.txt", response.query_result.intent.display_name)
+    write_to_file(home+"/catkin_ws/src/robot_ears/text_files/intent.txt", response.query_result.intent.display_name)
     print("response: " + response.query_result.intent.display_name)
     # print('Fulfillment text: {}\n'.format(
     #     response.query_result.fulfillment_text))
     # save string response.txt in /home/gal/toibot_ws/src/ToiBot1/src/toi_bot_stt/text_files
-    write_to_file(myHome+"/catkin_ws/src/robot_ears/text_files/response.txt", response.query_result.fulfillment_text)
+    write_to_file(home+"/catkin_ws/src/robot_ears/text_files/response.txt", response.query_result.fulfillment_text)
     print("intent: " + response.query_result.fulfillment_text)
 
     print('=' * 20)

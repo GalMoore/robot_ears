@@ -235,7 +235,7 @@ def normalize(sound, target_dBFS):
 
 def tell_user_acknowledged():
 
-    command = 'python3 /home/gal/toibot_ws/src/ToiBot1/src/motors/src/move_eyes_script.py'
+    command = 'python3 /home/intel/toibot_ws/src/ToiBot1/src/motors/src/move_eyes_script.py'
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
 # # m = motor 
