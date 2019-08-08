@@ -19,10 +19,14 @@ from array import array
 import time
 from pydub import AudioSegment
 volumes=[]
-myHome = os.path.expanduser('~')
+# myHome = os.path.expanduser('~')
 message = speechTT()
 pub =rospy.Publisher('/stt_topic', speechTT, queue_size=1)
 pub_listening =rospy.Publisher('/is_robot_listening', String, queue_size=1)
+
+from os.path import expanduser
+home = expanduser("~") + "/"
+# os.system("python3 {}catkin_ws/src/robot_face/src/headturn.py {}".format(home,str(5)))
 
 FORMAT=pyaudio.paInt16
 CHANNELS=1
@@ -32,8 +36,8 @@ CHUNK=516 # CHUNK DETERMINES HOW MANY SAMPLES IN EACH FRAME. SO SMALL CHUNK SPEE
 ACCEPTED_QUITE_FRAMES=30
 TIMEOUT=150 # 150 frames (i)
 minimum_tresh_to_trigger_ears=6000 # MAKE SURE INPUT IS THE WEBACAM AND SET TO FULL
-FILE_NAME= myHome + '/catkin_ws/src/robot_ears/speech_wavs/filename.wav'
-NORMALIZED_FILE_NAME = myHome + '/catkin_ws/src/robot_ears/speech_wavs/normalized.wav'
+FILE_NAME= home + 'catkin_ws/src/robot_ears/speech_wavs/filename.wav'
+NORMALIZED_FILE_NAME = home + 'catkin_ws/src/robot_ears/speech_wavs/normalized.wav'
 audio=pyaudio.PyAudio() #instantiate the pyaudio
 frames=[] #starting recording into this array
 has_reached_first_threshold = False
@@ -47,9 +51,9 @@ ignore_noise_above_thresh = 12000
 def google():
     ''' PYTHON 3 CODE THAT CONVERTS WAV TO STRING AND QUERIES 
     DIALOGFLOW FOR INTENT & RESULT WHICH ARE PRINTED INTO TXT FILES in scropt dialogflowAPI'''
-    python_bin = myHome + "/ToiBotEnv/bin/python"
+    python_bin = home + "ToiBotEnv/bin/python"
     # # path to the script that must run under the virtualenv
-    script_file = myHome + "/catkin_ws/src/robot_ears/src/dialogflowAPI.py"
+    script_file = home + "catkin_ws/src/robot_ears/src/dialogflowAPI.py"
     # Query Dialogflow, get string and response and write to txt file
     p = subprocess.Popen([python_bin, script_file])
     p_status = p.wait()
@@ -235,7 +239,7 @@ def normalize(sound, target_dBFS):
 
 def tell_user_acknowledged():
 
-    command = 'python3 /home/intel/toibot_ws/src/ToiBot1/src/motors/src/move_eyes_script.py'
+    command = 'python3 {}toibot_ws/src/ToiBot1/src/motors/src/move_eyes_script.py'.format(home)
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
 # # m = motor 
@@ -255,17 +259,17 @@ def send_Wav_to_google_get_response_txt_file_and_publish():
             google()
 
             # get string from text file and publish it
-            pathQuery = myHome + "/catkin_ws/src/robot_ears/text_files/query.txt"
+            pathQuery = home + "catkin_ws/src/robot_ears/text_files/query.txt"
             with open(pathQuery, 'r') as myfile:
                 dataQ = myfile.read()
             message.query = dataQ
 
-            pathResponse = myHome + "/catkin_ws/src/robot_ears/text_files/response.txt"
+            pathResponse = home + "catkin_ws/src/robot_ears/text_files/response.txt"
             with open(pathResponse, 'r') as myfile:
                 dataR = myfile.read()
             message.response = dataR
 
-            pathIntent = myHome + "/catkin_ws/src/robot_ears/text_files/intent.txt"
+            pathIntent = home + "catkin_ws/src/robot_ears/text_files/intent.txt"
             with open(pathIntent, 'r') as myfile:
                 dataI = myfile.read()
             message.intent = dataI
