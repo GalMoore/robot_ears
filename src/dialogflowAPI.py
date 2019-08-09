@@ -15,7 +15,6 @@ import os
 
 from os.path import expanduser
 home = expanduser("~") + "/"
-# os.system("python3 {}catkin_ws/src/robot_face/src/headturn.py {}".format(home,str(5)))
 
 ''' PYTHON 3 CODE THAT CONVERTS WAV 
 TO STRING AND QUERIES DIALOGFLOW FOR INTENT & RESULT which are printed into txt files'''

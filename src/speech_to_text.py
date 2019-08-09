@@ -26,7 +26,6 @@ pub_listening =rospy.Publisher('/is_robot_listening', String, queue_size=1)
 
 from os.path import expanduser
 home = expanduser("~") + "/"
-# os.system("python3 {}catkin_ws/src/robot_face/src/headturn.py {}".format(home,str(5)))
 
 FORMAT=pyaudio.paInt16
 CHANNELS=1
