@@ -26,9 +26,8 @@ volumes=[]
 message = speechTT()
 # pub =rospy.Publisher('/stt_topic', speechTT, queue_size=1)
 # pub_listening =rospy.Publisher('/is_robot_listening', String, queue_size=1)
-pub_sound_calib_bool = rospy.Publisher('/is_calibrating', String, queue_size=1)
-pub_sound_calib_vol = rospy.Publisher('/avg_ambience_vol', Int16, queue_size=1)
-
+pub_sound_calib_bool = rospy.Publisher('/is_calibrating', String,latch=True, queue_size=1)
+pub_sound_calib_vol = rospy.Publisher('/avg_ambience_vol', Int16,latch=True, queue_size=1)
 FORMAT=pyaudio.paInt16
 CHANNELS=1
 RATE=16000 # takes a few hundread samples per second 
@@ -47,21 +46,6 @@ tic = time.time()
 boolSpeak = False
 input_num_for_mic_device = None
 ignore_noise_above_thresh = 12000
-
-
-
-def set_threshold_for_speech_rec(current_vol_avg):
-    global minimum_tresh_to_trigger_ears
-
-    if 0<current_vol_avg<1000:
-        minimum_tresh_to_trigger_ears = 3000
-    elif 1000< current_vol_avg<2000:
-        minimum_tresh_to_trigger_ears = 4000
-    elif 2000<current_vol_avg<4000:
-        minimum_tresh_to_trigger_ears = 6000
-    else:
-        minimum_tresh_to_trigger_ears = 10000
-
 
 def get_avg_ambient_noise(length_of_Ambient_recording):
     global stream
@@ -116,48 +100,69 @@ def get_index_of_default():
             if(p.get_device_info_by_host_api_device_index(0, i).get('name')=="default"):
                 return(i)
 
-def is_robot_speaking_callback(data):
-    global boolSpeak
-    if (data.data=="speaking"):
-        boolSpeak = True
-        # print("speaking!!!!")
-    else:
-        # print("not speaking now at all!")
-        boolSpeak = False
-
-
 if __name__ == '__main__':
 
     rospy.init_node('robot_ears_calibration_node')
+    pub_sound_calib_bool = rospy.Publisher('/is_calibrating', String,latch=True, queue_size=1)
+    pub_sound_calib_vol = rospy.Publisher('/avg_ambience_vol', Int16,latch=True, queue_size=1)
+    # time.sleep(1)
     # pub = rospy.Publisher('is_robot_speaking_topic', String,queue_size=1)
-    rospy.Subscriber('is_robot_speaking_topic', String, is_robot_speaking_callback)
-
+    # rospy.Subscriber('is_robot_speaking_topic', String, is_robot_speaking_callback)
+# print("argv 0:10")
+    length_for_calib_from_state = sys.argv[1]
     print(20*"^")
     print("SOUND CALIBRATION >> SETTING AVERAGE VOLUME FOR THRESHOLD")
     print(20* "&")
+
+    pub_sound_calib_vol.publish(0)
+    pub_sound_calib_bool.publish("True")
+    avg_vol_of_ambience = get_avg_ambient_noise(int(length_for_calib_from_state))
+    pub_sound_calib_bool.publish("False")
+
+    # set_threshold_for_speech_rec(avg_vol_of_ambience)
+    for i in range(3):
+        pub_sound_calib_vol.publish(avg_vol_of_ambience)
+    # time.sleep(5)
+        time.sleep(0.2)
+
+
+
+
+
+# def set_threshold_for_speech_rec(current_vol_avg):
+#     global minimum_tresh_to_trigger_ears
+
+#     if 0<current_vol_avg<1000:
+#         minimum_tresh_to_trigger_ears = 3000
+#     elif 1000< current_vol_avg<2000:
+#         minimum_tresh_to_trigger_ears = 4000
+#     elif 2000<current_vol_avg<4000:
+#         minimum_tresh_to_trigger_ears = 6000
+#     else:
+#         minimum_tresh_to_trigger_ears = 10000
+
+# def is_robot_speaking_callback(data):
+#     global boolSpeak
+#     if (data.data=="speaking"):
+#         boolSpeak = True
+#         # print("speaking!!!!")
+#     else:
+#         # print("not speaking now at all!")
+#         boolSpeak = False
+
+
 
     # avg_vol_of_ambience = 100 # will set to 3000 thresh - which is pretty low band
     #  LATER ADD THAT THIS IS INPUT FROM STATE
     # avg_vol_of_ambience = sys.argv[1]
     # while(True):
 
-    if(boolSpeak == True):
-        print("I AM SORRY I CAN NOT LISTEN NOW")
-        time.sleep(2)
-        pass
+    # if(boolSpeak == True):
+    #     print("I AM SORRY I CAN NOT LISTEN NOW")
+    #     time.sleep(2)
+    #     pass
 
-    else:
-        pub_sound_calib_bool.publish("True")
-        avg_vol_of_ambience = get_avg_ambient_noise(100)
-        pub_sound_calib_bool.publish("False")
-        # set_threshold_for_speech_rec(avg_vol_of_ambience)
-        pub_sound_calib_vol.publish(avg_vol_of_ambience)
-
-
-
-
-
-
+    # else:
 
 
 
