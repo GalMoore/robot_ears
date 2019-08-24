@@ -20,9 +20,6 @@ import time
 from pydub import AudioSegment
 volumes=[]
 # myHome = os.path.expanduser('~')
-message = speechTT()
-pub =rospy.Publisher('/stt_topic', speechTT, latch=True, queue_size=1)
-pub_listening =rospy.Publisher('/is_robot_listening', String, latch=True, queue_size=1)
 
 from os.path import expanduser
 home = expanduser("~") + "/"
@@ -129,7 +126,7 @@ def detect_and_record():
         data_chunk=array('h',data) #data_chunk is an array of 2048 numbers
         vol=max(data_chunk)
         # if not yet told arduino to turn on, turn on now
-        pub_listening.publish("listening")
+        # pub_listening.publish("listening")
         # pub_listening.publish("not listening")
 
         print("frames recorded: " + str(len(frames)) + " current volume:  "+  str(vol) + " thresh: " + str(minimum_tresh_to_trigger_ears))
@@ -221,10 +218,10 @@ def send_Wav_to_google_get_response_txt_file_and_publish():
 
             # send message tqice. Not sure why once isnt enough. 
             # but subscriber state can sometimes hang
-            for i in range(3):
-                pub.publish(message)
+            # for i in range(3):
+            pub.publish(message)
 
-                time.sleep(0.2)
+                # time.sleep(0.2)
             # pub.publish(message)
 
             # after publishing messages delete text files (by opening them in write mode)
@@ -246,6 +243,14 @@ if __name__ == '__main__':
     rospy.init_node('robot_ears_node')
     # pub = rospy.Publisher('is_robot_speaking_topic', String,queue_size=1)
     rospy.Subscriber('is_robot_speaking_topic', String, callback)
+    message = speechTT()
+    pub =rospy.Publisher('/stt_topic', speechTT, latch=True, queue_size=10)
+    pub_listening =rospy.Publisher('/is_robot_listening', String, latch=True, queue_size=10)
+    message.query = "init"
+    message.response = "init"
+    message.intent = "init"
+    pub.publish(message)
+    pub_listening.publish("not listening")
     # avg_vol_of_ambience = sys.argv[1]
     # print("SYS ARGV [1]")
     # print(sys.argv[1])
@@ -267,16 +272,16 @@ if __name__ == '__main__':
         pass
 
     else:
-        # pub_listening.publish("listening")
+        pub_listening.publish("listening")
         hello = detect_and_record() # returns True or False 
         print("NO SPEECH INPUT FOUND AFTER RECORDING (print of detect and record()): " + str(hello))
         if hello==True:
-            # pub_listening.publish("not listening")
+            pub_listening.publish("not listening")
             normalize(FILE_NAME,-8)
             # start = time.time()
             tell_user_acknowledged() # runs script to move robot eyes - so we know it heard something
             send_Wav_to_google_get_response_txt_file_and_publish()
-            pub_listening.publish("not listening")
+            # pub_listening.publish("not listening")
 
         # time.sleep(1)
         # time.sleep()

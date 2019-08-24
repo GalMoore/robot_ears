@@ -9,7 +9,7 @@ if __name__ == '__main__':
     rospy.init_node('one_message_node')
 
     message = speechTT()
-    pub_stt =rospy.Publisher('/stt_topic', speechTT, queue_size=10)
+    pub_stt =rospy.Publisher('/stt_topic', speechTT, latch=True,queue_size=10)
 
     message.query = 'from'
     message.response = "the"
