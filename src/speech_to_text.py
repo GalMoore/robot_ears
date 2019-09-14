@@ -51,7 +51,9 @@ def google():
     # # path to the script that must run under the virtualenv
     script_file = home + "catkin_ws/src/robot_ears/src/dialogflowAPI.py"
     # Query Dialogflow, get string and response and write to txt file
+    # print("before google subprocess")
     p = subprocess.Popen([python_bin, script_file])
+    # print("after google subprocess")
     p_status = p.wait()
     # p.kill()
 
@@ -142,11 +144,15 @@ def detect_and_record():
                 message.intent = "no words found"
                 message.query = "no words found"
                 message.response = "no words found"
-                for i in range(3):
-                    pub.publish(message)
-                    time.sleep(0.2)
-                    pub.publish(message)
-                    pub_listening.publish("not listening")
+                # delete the txt files
+                open("/home/intel/catkin_ws/src/robot_ears/text_files/query.txt", 'w').close()
+                open("/home/intel/catkin_ws/src/robot_ears/text_files/response.txt", 'w').close()
+                open("/home/intel/catkin_ws/src/robot_ears/text_files/intent.txt", 'w').close()
+                # for i in range(3):
+                #     pub.publish(message)
+                #     time.sleep(0.2)
+                #     pub.publish(message)
+                #     pub_listening.publish("not listening")
                 return False
             pass
         
@@ -192,7 +198,11 @@ def normalize(sound, target_dBFS):
 def tell_user_acknowledged():
 
     command = 'python3 {}toibot_ws/src/ToiBot1/src/motors/src/move_eyes_script.py'.format(home)
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    # print("tell user acknowldeged before subprocess")
+    #process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    os.system(command)
+    # print("tell user acknowldeged after subprocess")
+
 
 
 def send_Wav_to_google_get_response_txt_file_and_publish():
@@ -225,9 +235,9 @@ def send_Wav_to_google_get_response_txt_file_and_publish():
             # pub.publish(message)
 
             # after publishing messages delete text files (by opening them in write mode)
-            open(pathQuery, 'w').close()
-            open(pathResponse, 'w').close()
-            open(pathIntent, 'w').close()
+            # open(pathQuery, 'w').close()
+            # open(pathResponse, 'w').close()
+            # open(pathIntent, 'w').close()
 
 def callback(data):
     global boolSpeak
@@ -240,12 +250,14 @@ def callback(data):
 
 
 if __name__ == '__main__':
-    rospy.init_node('robot_ears_node')
+    import random
+    rospy.init_node('robot_ears_node_{}'.format(random.randint(0,100)))
     # pub = rospy.Publisher('is_robot_speaking_topic', String,queue_size=1)
     rospy.Subscriber('is_robot_speaking_topic', String, callback)
     message = speechTT()
-    pub =rospy.Publisher('/stt_topic', speechTT, latch=True, queue_size=10)
-    pub_listening =rospy.Publisher('/is_robot_listening', String, latch=True, queue_size=10)
+    pub =rospy.Publisher('/stt_topic', speechTT, queue_size=10)
+    #pub =rospy.Publisher('/stt_topic', speechTT, latch=True, queue_size=10)
+    pub_listening =rospy.Publisher('/is_robot_listening', String, latch=True,queue_size=10)
     message.query = "init"
     message.response = "init"
     message.intent = "init"
@@ -255,15 +267,16 @@ if __name__ == '__main__':
     # print("SYS ARGV [1]")
     # print(sys.argv[1])
     avg_vol_of_ambience = int(sys.argv[1])
-    print("avg_vol_of_ambience is:")
-    print(avg_vol_of_ambience)
+    print("**********")
+    print("avg_vol_of_ambience is:" + str(avg_vol_of_ambience))
+    print("**********")
 
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     print("SETTING UP SPEECH TO TEXT CHECK MIC INPUT CONFIG")
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     set_threshold_for_speech_rec(avg_vol_of_ambience)
-    print("MINIMUM_TRESH TO TRIGGER EARS IS: ")
+    print("AFTER DECIDING TRIGGER RANGE: MINIMUM_TRESH TO TRIGGER EARS IS: ")
     print(minimum_tresh_to_trigger_ears)
 
     if(boolSpeak == True):

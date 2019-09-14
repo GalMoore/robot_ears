@@ -74,6 +74,7 @@ def get_avg_ambient_noise(length_of_Ambient_recording):
         volumes.append(vol)
         if(n==length_of_Ambient_recording):
             # check_avg_vol_in_frames(frames)
+            volumes[0] = 300 # can often be a crackly jump so set to modest 300
             print(volumes)
             sum_volumes = sum(volumes)
             # print("sum: " + str(sum_volumes))
@@ -100,30 +101,40 @@ def get_index_of_default():
             if(p.get_device_info_by_host_api_device_index(0, i).get('name')=="default"):
                 return(i)
 
+def write_to_file(path,text):
+    # only writes to file if string !empty
+    if text:
+        text_file = open(path, "w")
+        text_file.write(text)
+        text_file.close()
+
 if __name__ == '__main__':
 
     rospy.init_node('robot_ears_calibration_node')
     pub_sound_calib_bool = rospy.Publisher('/is_calibrating', String,latch=True, queue_size=1)
     pub_sound_calib_vol = rospy.Publisher('/avg_ambience_vol', Int16,latch=True, queue_size=1)
+    path_to_save_txt_vol = "/home/intel/catkin_ws/src/robot_ears/text_files/volume_calib.txt" 
+
     # time.sleep(1)
     # pub = rospy.Publisher('is_robot_speaking_topic', String,queue_size=1)
     # rospy.Subscriber('is_robot_speaking_topic', String, is_robot_speaking_callback)
 # print("argv 0:10")
     length_for_calib_from_state = sys.argv[1]
     print(20*"^")
-    print("SOUND CALIBRATION >> SETTING AVERAGE VOLUME FOR THRESHOLD")
+    print("SOUND CALIBRATION >> FINDING AVERAGE VOLUME FOR THRESHOLD")
     print(20* "&")
 
-    pub_sound_calib_vol.publish(0)
+    # pub_sound_calib_vol.publish(0)
     pub_sound_calib_bool.publish("True")
     avg_vol_of_ambience = get_avg_ambient_noise(int(length_for_calib_from_state))
     pub_sound_calib_bool.publish("False")
 
+    write_to_file(path_to_save_txt_vol,str(avg_vol_of_ambience))
     # set_threshold_for_speech_rec(avg_vol_of_ambience)
-    for i in range(3):
-        pub_sound_calib_vol.publish(avg_vol_of_ambience)
-    # time.sleep(5)
-        time.sleep(0.2)
+    # for i in range(3):
+    #     pub_sound_calib_vol.publish(avg_vol_of_ambience)
+    # # time.sleep(5)
+    #     time.sleep(0.2)
 
 
 
