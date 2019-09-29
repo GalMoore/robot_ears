@@ -1,15 +1,6 @@
 #!/usr/bin/env python
 # Software License Agreement (BSD License)
 
-'''
-SPEECH TO TEXT NODE
-This node constantly listens for speech above THRESHOLD
-if found, waits for end of sentence, and send resulting wav file to google to get:
-A query in text
-B intent
-C response
-'''
-
 import subprocess
 import rospy
 from std_msgs.msg import String
